@@ -1,0 +1,37 @@
+# Entorno virtual
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+
+# Configuraciones de VS Code
+.vscode/
+*.code-workspace
+
+# Archivos de logs
+*.log
+
+# Bases de datos locales / temporales
+*.sqlite3
+*.db
+*.bak
+*.tmp
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Python pip cache
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Distribuciones y paquetes
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# FastAPI / Uvicorn archivos temporales
+*.pid

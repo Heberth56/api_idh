@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import user_routes, course_routes
+from routes import user_routes, course_routes, llm_routes
 
 app = FastAPI(
     title="INFINITY LEARN API",
@@ -24,3 +24,4 @@ app.add_middleware(
 
 app.include_router(user_routes.router)
 app.include_router(course_routes.router)
+app.include_router(llm_routes.router)

@@ -5,7 +5,7 @@ __pycache__/
 *.pyo
 *.pyd
 *.swp
-
+.env
 # Configuraciones de VS Code
 .vscode/
 *.code-workspace

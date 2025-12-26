@@ -143,20 +143,20 @@ async def transcribir_youtube_link(url: str):
 
     if not video_id:
         print("No se pudo extraer el ID del video.")
-        return None
+        return {'result':f'No se pudo extraer el id del video: {video_id}'}
 
     try:
         api = YouTubeTranscriptApi()
         fetched = api.fetch(video_id, languages=['es'])
         texto = " ".join([snippet.text for snippet in fetched.snippets])
-        return texto
+        return {'result':f'Este es el texto\n{texto}'}
 
     except TranscriptsDisabled:
         print("Los subtítulos están deshabilitados en este video.")
-        return None
+        return {'Result': 'Los subs estan deshabilitados para este video'}
     except Exception as err:
         print("Error al obtener transcripción:", err)
-        return None
+        return {'Result': f'Error al obtener la transcripcion: {err}'}
     
 
 async def youtube_tiempo(url):

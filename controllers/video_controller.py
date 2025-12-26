@@ -4,6 +4,12 @@ import subprocess
 import yt_dlp
 import openai
 
+from google import genai
+from google.genai import types
+
+from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled
+from urllib.parse import urlparse, parse_qs
+
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
 def descargar_video(url: str, output_file: str = "video.webm"):
@@ -99,3 +105,53 @@ async def transcribir(url: str, fragment_duration: int = 30*60):
             os.remove(video_file)
 
 
+async def gemini_video_summary():
+    try:
+        client = genai.Client(
+        api_key="AIzaSyD6MxZBN0DpnMm8XUysz3yzMxY1hKWxOJU"
+        )
+        response = client.models.generate_content(
+            model='models/gemini-2.5-flash',
+            contents=types.Content(
+                parts=[
+                    types.Part(
+                        file_data=types.FileData(file_uri='https://www.youtube.com/watch?v=8HlW_mWo3OA&t=22s'),
+                        video_metadata=types.VideoMetadata(
+                            start_offset='1250s',
+                            end_offset='1570s'
+                        )
+                    ),
+                    types.Part(text='Transcribe el video con los tiempos en formato (00:00)')
+                ]
+            )
+        )
+        
+        return {"respuesta": response}
+    except Exception as e:
+        print(e)
+        return None
+
+async def transcribir_youtube_link(url: str):    
+    parsed = urlparse(url)
+    if parsed.hostname in ("www.youtube.com", "youtube.com"):
+        qs = parse_qs(parsed.query)
+        video_id = qs.get("v", [None])[0]
+    else:
+        video_id = parsed.path.split("/")[-1]
+
+    if not video_id:
+        print("No se pudo extraer el ID del video.")
+        return None
+
+    try:
+        api = YouTubeTranscriptApi()
+        fetched = api.fetch(video_id, languages=['es'])
+        texto = " ".join([snippet.text for snippet in fetched.snippets])
+        return texto
+
+    except TranscriptsDisabled:
+        print("Los subtítulos están deshabilitados en este video.")
+        return None
+    except Exception as err:
+        print("Error al obtener transcripción:", err)
+        return None

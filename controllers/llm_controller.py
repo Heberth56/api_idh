@@ -8,7 +8,6 @@ load_dotenv()
 
 genai.configure(api_key=os.getenv('GEMINY_API_KEY'))
 
-
 async def prediction(model):
     try:
         # Modelo Gemini

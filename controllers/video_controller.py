@@ -3,6 +3,7 @@ import glob
 import subprocess
 import yt_dlp
 import openai
+import isodate
 
 from google import genai
 from google.genai import types
@@ -11,6 +12,7 @@ from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled
 from urllib.parse import urlparse, parse_qs
 
 from yt_dlp import YoutubeDL
+from googleapiclient.discovery import build
 
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
@@ -168,3 +170,37 @@ async def youtube_tiempo(url):
         return {'result': f'esta es la duracion: {duration}'}
     except Exception as e:
         return {"result": f"Ocurrio un error {e}"}
+    
+
+def extract_video_id(url: str) -> str:
+    parsed = urlparse(url)
+
+    if parsed.hostname in ("www.youtube.com", "youtube.com"):
+        if parsed.path == "/watch":
+            return parse_qs(parsed.query)["v"][0]
+        if parsed.path.startswith("/shorts/"):
+            return parsed.path.split("/")[2]
+
+    if parsed.hostname == "youtu.be":
+        return parsed.path.lstrip("/")
+
+    raise ValueError("URL de YouTube inválida")
+
+async def get_video_duration_seconds(url: str):
+    try:
+        api_key = "AIzaSyDk5LtpyvweVJ4RKK_8YCo0n3jrr_3syD8"
+
+        video_id = extract_video_id(url)
+
+        youtube = build("youtube", "v3", developerKey=api_key)
+
+        response = youtube.videos().list(
+            part="contentDetails",
+            id=video_id
+        ).execute()
+
+        duration_iso = response["items"][0]["contentDetails"]["duration"]
+
+        return int(isodate.parse_duration(duration_iso).total_seconds())
+    except Exception as e:
+        return {'result':f'Ocurrio un error: {e}'}

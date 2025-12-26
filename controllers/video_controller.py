@@ -10,6 +10,8 @@ from google.genai import types
 from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled
 from urllib.parse import urlparse, parse_qs
 
+from yt_dlp import YoutubeDL
+
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
 def descargar_video(url: str, output_file: str = "video.webm"):
@@ -155,3 +157,14 @@ async def transcribir_youtube_link(url: str):
     except Exception as err:
         print("Error al obtener transcripción:", err)
         return None
+    
+
+async def youtube_tiempo(url):
+    try:
+        duration = "No hay"
+        with YoutubeDL({"quiet":True}) as ydl:
+            info = ydl.extract_info(url, download=False)
+            duration = info['duration']
+        return {'result': f'esta es la duracion: {duration}'}
+    except Exception as e:
+        return {"result": f"Ocurrio un error {e}"}

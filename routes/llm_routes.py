@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from controllers.llm_controller import prediction, retroalimentacion
-from controllers.video_controller import  transcribir, descargar_video_youtube, gemini_video_summary, transcribir_youtube_link, youtube_tiempo, get_video_duration_seconds
+from controllers.video_controller import  transcribir, descargar_video_youtube, gemini_video_summary, transcribir_youtube_link, youtube_tiempo
 from models.llm_model import LLmModel, VideoModel
 
 
@@ -32,8 +32,8 @@ async def get_audio_yt(model: VideoModel):
 
 
 @router.post("/gemini-summary")
-async def gemini_algo():
-    return await gemini_video_summary()
+async def gemini_algo(model:VideoModel):
+    return await gemini_video_summary(url=model.url)
 
 @router.post("/youtube-transcript")
 async def youtube_link(model:VideoModel):
@@ -44,6 +44,3 @@ async def youtube_link(model:VideoModel):
 async def get_youtube_tiempo(model:VideoModel):
     return await youtube_tiempo(url=model.url)
 
-@router.post("/google-youtube-tiempo")
-async def get_google_youtube_tiempo(model:VideoModel):
-    return await get_video_duration_seconds(url=model.url)

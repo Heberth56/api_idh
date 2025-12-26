@@ -4,6 +4,7 @@ import subprocess
 import yt_dlp
 import openai
 import isodate
+import asyncio
 
 from google import genai
 from google.genai import types
@@ -108,33 +109,6 @@ async def transcribir(url: str, fragment_duration: int = 30*60):
         if video_file and os.path.exists(video_file):
             os.remove(video_file)
 
-
-async def gemini_video_summary():
-    try:
-        client = genai.Client(
-        api_key="AIzaSyD6MxZBN0DpnMm8XUysz3yzMxY1hKWxOJU"
-        )
-        response = client.models.generate_content(
-            model='models/gemini-2.5-flash',
-            contents=types.Content(
-                parts=[
-                    types.Part(
-                        file_data=types.FileData(file_uri='https://www.youtube.com/watch?v=8HlW_mWo3OA&t=22s'),
-                        video_metadata=types.VideoMetadata(
-                            start_offset='1250s',
-                            end_offset='1570s'
-                        )
-                    ),
-                    types.Part(text='Transcribe el video con los tiempos en formato (00:00)')
-                ]
-            )
-        )
-        
-        return {"respuesta": response}
-    except Exception as e:
-        print(e)
-        return None
-
 async def transcribir_youtube_link(url: str):    
     parsed = urlparse(url)
     if parsed.hostname in ("www.youtube.com", "youtube.com"):
@@ -186,7 +160,7 @@ def extract_video_id(url: str) -> str:
 
     raise ValueError("URL de YouTube inválida")
 
-async def get_video_duration_seconds(url: str):
+def get_video_duration_seconds(url: str):
     try:
         api_key = "AIzaSyDk5LtpyvweVJ4RKK_8YCo0n3jrr_3syD8"
 
@@ -203,4 +177,86 @@ async def get_video_duration_seconds(url: str):
 
         return int(isodate.parse_duration(duration_iso).total_seconds())
     except Exception as e:
-        return {'result':f'Ocurrio un error: {e}'}
+        return None
+        # return {'result':f'Ocurrio un error: {e}'}
+    
+# start_offset='1250s',
+# end_offset='1570s'
+        # api_key="AIzaSyBg5a1xn3sYOtnqBsmnLmP2JFMgR_nmJiU"
+# async def gemini_video_summary(url):
+#     try:
+#         # duration = get_video_duration_seconds(url)
+#         client = genai.Client(
+#             api_key="AIzaSyBg5a1xn3sYOtnqBsmnLmP2JFMgR_nmJiU"
+#         )
+#         response = client.models.generate_content(
+#             model='models/gemini-2.5-flash',
+#             contents=types.Content(
+#                 parts=[
+#                     types.Part(
+#                         file_data=types.FileData(file_uri=url),
+#                         video_metadata=types.VideoMetadata(
+#                             start_offset='0s',
+#                             end_offset='2000s'
+#                         )
+#                     ),
+#                     types.Part(text='Transcribe el video sin agregar contenido extra')
+#                 ]
+#             )
+#         )
+
+#         texto_transcrito = response.candidates[0].content.parts[0].text        
+#         return texto_transcrito
+#     except Exception as e:
+#         print(e)
+#         return None
+
+
+async def gemini_video_summary(url, vide_seg=2000):
+    try:
+        duration = get_video_duration_seconds(url)  # Por ejemplo: 5048
+        client = genai.Client(api_key="AIzaSyBg5a1xn3sYOtnqBsmnLmP2JFMgR_nmJiU")
+        texto_completo = ""
+
+        start = 0
+        while start < duration:
+            end_seg = min(start + vide_seg, duration)  # No pasarnos del total del video
+            print("******************************************", end='\n')
+            print(start, end_seg, end='\n')
+            print("******************************************", end='\n')
+            response = client.models.generate_content(
+                model='models/gemini-2.5-flash',
+                contents=types.Content(
+                    parts=[
+                        # Parte del video
+                        types.Part(
+                            file_data=types.FileData(file_uri=url),
+                            video_metadata=types.VideoMetadata(
+                                start_offset=f"{start}s",
+                                end_offset=f"{end_seg}s"
+                            )
+                        ),
+                        types.Part(
+                            text="Transcribe el video sin agregar contenido extra y tampoco le agregaues algun formato como 'Markdown'"
+                        )
+                    ]
+                )
+            )
+
+            # Concatenar el texto de este chunk
+            texto_chunk = response.candidates[0].content.parts[0].text
+            print("#####################################################", end='\n')
+            print(start, end_seg, end='\n')
+            print(texto_chunk)
+            print("#####################################################", end='\n')
+
+            texto_completo += texto_chunk + " "
+
+            start += vide_seg  # Avanzar al siguiente chunk
+            await asyncio.sleep(5)
+
+        return texto_completo.strip()
+
+    except Exception as e:
+        print(e)
+        return {"result":f"Ocurrio un error inesperado {e}"}
